@@ -3,8 +3,9 @@ defmodule PlugBodyDigest.Crypto do
 
   defstruct [:algorithm, :hash_state, :expected]
 
-  @spec init(:crypto.hash_algorithm(), binary()) ::
-          {:ok, PlugBodyDigest.Crypto.t()} | {:error, :bad_algorithm}
+  @type t :: %__MODULE__{}
+
+  @spec init(:crypto.hash_algorithm(), binary()) :: {:ok, t()} | {:error, :bad_algorithm}
   def init(algorithm, expected) do
     state = %__MODULE__{
       algorithm: algorithm,
@@ -18,12 +19,12 @@ defmodule PlugBodyDigest.Crypto do
       {:error, :bad_algorithm}
   end
 
-  @spec update(PlugBodyDigest.Crypto.t(), binary()) :: PlugBodyDigest.Crypto.t()
+  @spec update(t(), binary()) :: t()
   def update(%__MODULE__{hash_state: hash_state} = state, data) do
     %{state | hash_state: :crypto.hash_update(hash_state, data)}
   end
 
-  @spec verify(PlugBodyDigest.Crypto.t()) :: :ok | {:error, :digest_mismatch}
+  @spec verify(t()) :: :ok | {:error, :digest_mismatch}
   def verify(%__MODULE__{hash_state: hash_state, expected: expected}) do
     case :crypto.hash_final(hash_state) do
       ^expected -> :ok
