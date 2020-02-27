@@ -3,7 +3,7 @@ defmodule PlugBodyDigest do
   Plug to verify the request body against the digest value sent in the HTTP
   'Digest' header, as defined in [RFC3230, section 4.3.2](https://tools.ietf.org/html/rfc3230#section-4.3.2).
 
-  Supported digests are "sha-512", "sha-256" and "sha".
+  Supported digests are "sha-512" and "sha-256".
 
   ## Options
 
@@ -49,7 +49,7 @@ defmodule PlugBodyDigest do
 
   @behaviour Plug
 
-  @algorithms [:sha512, :sha256, :sha]
+  @algorithms [:sha512, :sha256]
   @default_on_success nil
   @default_on_failure {__MODULE__, :failure, []}
 
