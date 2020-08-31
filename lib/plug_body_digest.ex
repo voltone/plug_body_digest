@@ -79,13 +79,13 @@ defmodule PlugBodyDigest do
       header
   """
   @type error_reason ::
-      :body_not_read
-    | :multipart
-    | :bad_algorithm
-    | :no_digest_header
-    | :algorithm_mismatch
-    | :malformed_digest_value
-    | :digest_mismatch
+          :body_not_read
+          | :multipart
+          | :bad_algorithm
+          | :no_digest_header
+          | :algorithm_mismatch
+          | :malformed_digest_value
+          | :digest_mismatch
 
   @impl true
   @spec init(Keyword.t()) :: Keyword.t()
@@ -137,6 +137,14 @@ defmodule PlugBodyDigest do
     conn
     |> update_digest("", algorithms: algorithms)
     |> verify(algorithms)
+  end
+
+  defp verify(%Plug.Conn{adapter: {Plug.Adapters.Test.Conn, _}}, _algorithms) do
+    # When testing with Plug.Test the request body is not always read through
+    # Plug.Parsers, so the custom `body_reader` is not invoked. If realistic
+    # Digest header handing is required in tests, always pass in the body
+    # as a binary in `Plug.Test.conn/3`!
+    :ok
   end
 
   defp on_success(nil, conn), do: conn

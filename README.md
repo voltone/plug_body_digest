@@ -59,6 +59,17 @@ defmodule MyAppWeb.APIController do
 end
 ```
 
+## Testing
+
+When testing with `Plug.Test` or `Phoenix.ConnTest`, the request body is not
+always read through `Plug.Parsers`, in which case the custom `body_reader` is
+not invoked. In particular this happens when setting `params_or_body` to a
+map.
+
+Digest header verification is skipped when this happens, so in test cases that
+verify the correct handling of the Digest header, both for positive and
+negative test scenarions, always pass in the body as a binary!
+
 ## Installation
 
 Add `plug_body_digest` to your list of dependencies in `mix.exs`:
