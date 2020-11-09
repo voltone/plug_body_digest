@@ -288,6 +288,7 @@ defmodule PlugBodyDigest do
         _otherwise -> nil
       end
     end)
+    |> Enum.reject(&is_nil/1)
     |> Enum.into(%{})
   end
 

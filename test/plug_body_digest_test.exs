@@ -56,6 +56,22 @@ defmodule PlugBodyDigestTest do
       assert capture_log(scenario) =~ "no_digest_header"
     end
 
+    test "malformed header" do
+      scenario = fn ->
+        conn =
+          conn(:post, "test=123")
+          |> put_req_header("digest", "malformed")
+          |> call()
+
+        assert conn.halted
+        assert conn.status == 403
+        assert [want_digest] = get_resp_header(conn, "want-digest")
+        assert want_digest =~ "sha-256"
+      end
+
+      assert capture_log(scenario) =~ "algorithm_mismatch"
+    end
+
     test "with correct digest, no parser" do
       body = "test=123"
 
