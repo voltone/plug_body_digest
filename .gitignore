@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 plug_body_digest-*.tar
 
+# Because we're a library
+mix.lock
