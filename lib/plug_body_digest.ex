@@ -87,6 +87,11 @@ defmodule PlugBodyDigest do
           | :malformed_digest_value
           | :digest_mismatch
 
+  @typedoc """
+  Algorithm and final digest value
+  """
+  @type final_digest :: {:crypto.hash_algorithm(), binary()}
+
   @impl true
   @spec init(Keyword.t()) :: Keyword.t()
   def init(opts), do: opts
@@ -333,7 +338,8 @@ defmodule PlugBodyDigest do
   it is not sufficient to enable only the body reader hook.
 
   In tests this function returns a `nil` digest if the request body was not a
-  binary. Please refer to the Testing section in the README.md file.
+  binary. Please refer to the [Testing](README.md#testing) section of the
+  project's README.
   """
   @spec get_digest(Plug.Conn.t()) :: {:ok, Crypto.final_digest() | nil} | {:error, error_reason()}
   def get_digest(conn) do
