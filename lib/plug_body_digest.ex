@@ -148,7 +148,7 @@ defmodule PlugBodyDigest do
     # Plug.Parsers, so the custom `body_reader` is not invoked. If realistic
     # Digest header handing is required in tests, always pass in the body
     # as a binary in `Plug.Test.conn/3`!
-    :ok
+    {:ok, nil}
   end
 
   defp want_digest(algorithms) do
@@ -331,8 +331,11 @@ defmodule PlugBodyDigest do
 
   Note that this function may only be used if the Plug was previously called;
   it is not sufficient to enable only the body reader hook.
+
+  In tests this function returns a `nil` digest if the request body was not a
+  binary. Please refer to the Testing section in the README.md file.
   """
-  @spec get_digest(Plug.Conn.t()) :: {:ok, binary()} | {:error, error_reason()}
+  @spec get_digest(Plug.Conn.t()) :: {:ok, Crypto.final_digest() | nil} | {:error, error_reason()}
   def get_digest(conn) do
     case conn.private[:plug_body_digest] do
       {:final, digest} ->
