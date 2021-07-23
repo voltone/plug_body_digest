@@ -25,11 +25,10 @@ defmodule PlugBodyDigest.Crypto do
     %{state | hash_state: :crypto.hash_update(hash_state, data)}
   end
 
-  @type final_digest :: {:crypto.hash_algorithm(), binary()}
   @spec verify(t()) ::
-          {:ok, final_digest()}
-          | {:error, :no_digest_header, final_digest()}
-          | {:error, :digest_mismatch, final_digest()}
+          {:ok, PlugBodyDigest.final_digest()}
+          | {:error, :no_digest_header, PlugBodyDigest.final_digest()}
+          | {:error, :digest_mismatch, PlugBodyDigest.final_digest()}
   def verify(%__MODULE__{
         algorithm: algorithm,
         hash_state: hash_state,
