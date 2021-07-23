@@ -49,7 +49,7 @@ defmodule PlugBodyDigest do
 
   @behaviour Plug
 
-  @algorithms [:sha512, :sha256, :sha]
+  @algorithms [:sha256, :sha512, :sha]
   @default_on_success nil
   @default_on_failure {__MODULE__, :failure, []}
 
@@ -100,20 +100,24 @@ defmodule PlugBodyDigest do
     algorithms = Keyword.get(opts, :algorithms, @algorithms)
 
     case verify(conn, algorithms) do
-      :ok ->
+      {:ok, digest} ->
+        conn = put_private(conn, :plug_body_digest, {:final, digest})
+
         opts
         |> Keyword.get(:on_success, @default_on_success)
         |> on_success(conn)
 
-      {:error, reason} ->
-        want_digest =
-          algorithms
-          |> Enum.map(&Crypto.algorithm_name/1)
-          |> Enum.join(",")
+      {:error, reason, digest} ->
+        conn = put_private(conn, :plug_body_digest, {:final, digest})
 
         opts
         |> Keyword.get(:on_failure, @default_on_failure)
-        |> on_failure(conn, reason, want_digest)
+        |> on_failure(conn, reason, want_digest(algorithms))
+
+      {:error, reason} ->
+        opts
+        |> Keyword.get(:on_failure, @default_on_failure)
+        |> on_failure(conn, reason, want_digest(algorithms))
     end
   end
 
@@ -144,7 +148,13 @@ defmodule PlugBodyDigest do
     # Plug.Parsers, so the custom `body_reader` is not invoked. If realistic
     # Digest header handing is required in tests, always pass in the body
     # as a binary in `Plug.Test.conn/3`!
-    :ok
+    {:ok, nil}
+  end
+
+  defp want_digest(algorithms) do
+    algorithms
+    |> Enum.map(&Crypto.algorithm_name/1)
+    |> Enum.join(",")
   end
 
   defp on_success(nil, conn), do: conn
@@ -273,7 +283,7 @@ defmodule PlugBodyDigest do
 
   defp get_digest_header(conn) do
     case get_req_header(conn, "digest") do
-      [] -> {:error, :no_digest_header}
+      [] -> {:ok, :no_digest_header}
       digest_headers -> {:ok, parse_digest(digest_headers)}
     end
   end
@@ -294,6 +304,10 @@ defmodule PlugBodyDigest do
 
   defp select_algorithm(_digests, []), do: {:error, :algorithm_mismatch}
 
+  defp select_algorithm(:no_digest_header, [algorithm | _more]) do
+    {:ok, algorithm, :no_digest_header}
+  end
+
   defp select_algorithm(digests, [algorithm | more]) do
     case Map.get(digests, Crypto.algorithm_name(algorithm)) do
       nil ->
@@ -304,6 +318,31 @@ defmodule PlugBodyDigest do
           :error -> {:error, :malformed_digest_value}
           {:ok, expected} -> {:ok, algorithm, expected}
         end
+    end
+  end
+
+  @doc """
+  Returns the request body digest.
+
+  Returns an error if the digest value was not calculated, e.g. because an
+  invalid algorithm was selected. The algorithm is selected based on the
+  Digest header sent by the client or, if it is absent, the first configured
+  algorithm (SHA-256 by default).
+
+  Note that this function may only be used if the Plug was previously called;
+  it is not sufficient to enable only the body reader hook.
+
+  In tests this function returns a `nil` digest if the request body was not a
+  binary. Please refer to the Testing section in the README.md file.
+  """
+  @spec get_digest(Plug.Conn.t()) :: {:ok, Crypto.final_digest() | nil} | {:error, error_reason()}
+  def get_digest(conn) do
+    case conn.private[:plug_body_digest] do
+      {:final, digest} ->
+        {:ok, digest}
+
+      error ->
+        error
     end
   end
 end

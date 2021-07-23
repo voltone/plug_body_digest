@@ -5,7 +5,8 @@ defmodule PlugBodyDigest.Crypto do
 
   @type t :: %__MODULE__{}
 
-  @spec init(:crypto.hash_algorithm(), binary()) :: {:ok, t()} | {:error, :bad_algorithm}
+  @spec init(:crypto.hash_algorithm(), binary() | :no_digest_header) ::
+          {:ok, t()} | {:error, :bad_algorithm}
   def init(algorithm, expected) do
     state = %__MODULE__{
       algorithm: algorithm,
@@ -24,11 +25,25 @@ defmodule PlugBodyDigest.Crypto do
     %{state | hash_state: :crypto.hash_update(hash_state, data)}
   end
 
-  @spec verify(t()) :: :ok | {:error, :digest_mismatch}
-  def verify(%__MODULE__{hash_state: hash_state, expected: expected}) do
-    case :crypto.hash_final(hash_state) do
-      ^expected -> :ok
-      _otherwise -> {:error, :digest_mismatch}
+  @type final_digest :: {:crypto.hash_algorithm(), binary()}
+  @spec verify(t()) ::
+          {:ok, final_digest()}
+          | {:error, :no_digest_header, final_digest()}
+          | {:error, :digest_mismatch, final_digest()}
+  def verify(%__MODULE__{
+        algorithm: algorithm,
+        hash_state: hash_state,
+        expected: :no_digest_header
+      }) do
+    {:error, :no_digest_header, {algorithm, :crypto.hash_final(hash_state)}}
+  end
+
+  def verify(%__MODULE__{algorithm: algorithm, hash_state: hash_state, expected: expected}) do
+    digest = :crypto.hash_final(hash_state)
+
+    case digest do
+      ^expected -> {:ok, {algorithm, digest}}
+      _otherwise -> {:error, :digest_mismatch, {algorithm, digest}}
     end
   end
 

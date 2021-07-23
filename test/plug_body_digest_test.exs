@@ -205,6 +205,53 @@ defmodule PlugBodyDigestTest do
     end
   end
 
+  describe "get_digest" do
+    test "success" do
+      body = "test=123"
+
+      conn =
+        conn(:post, body)
+        |> with_digest(body)
+        |> call(on_success: {Plug.Conn, :assign, [:valid_digest, true]})
+
+      assert PlugBodyDigest.get_digest(conn) == {:ok, {:sha256, :crypto.hash(:sha256, body)}}
+    end
+
+    test "with empty body" do
+      conn =
+        conn(:get)
+        |> with_digest("")
+        |> call()
+
+      assert PlugBodyDigest.get_digest(conn) == {:ok, {:sha256, :crypto.hash(:sha256, "")}}
+    end
+
+    @tag capture_log: true
+    test "failure" do
+      conn =
+        conn(:post, "test=123")
+        |> with_digest(%{"nosuchthing" => Base.encode64("nosuchthing")})
+        |> call(
+          algorithms: [:nosuchthing],
+          parsers_opts: [
+            body_reader: {PlugBodyDigest, :digest_body_reader, [[algorithms: [:nosuchthing]]]}
+          ]
+        )
+
+      assert PlugBodyDigest.get_digest(conn) == {:error, :bad_algorithm}
+    end
+
+    test "missing header" do
+      body = "test=123"
+
+      conn =
+        conn(:post, body)
+        |> call(on_failure: {PlugBodyDigest, :optional, []})
+
+      assert PlugBodyDigest.get_digest(conn) == {:ok, {:sha256, :crypto.hash(:sha256, body)}}
+    end
+  end
+
   # Prepare a test connection without body
   defp conn(method) do
     Plug.Test.conn(method, "http://localhost:4000/")
