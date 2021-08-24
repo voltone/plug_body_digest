@@ -1,7 +1,7 @@
 defmodule PlugBodyDigest.MixProject do
   use Mix.Project
 
-  @version "0.7.0"
+  @version "0.8.0"
 
   def project do
     [
@@ -30,8 +30,16 @@ defmodule PlugBodyDigest.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
+    mime_version =
+      if Version.match?(System.version(), ">= 1.10.0") do
+        "~> 1.5 or ~> 2.0"
+      else
+        "~> 1.5"
+      end
+
     [
       {:plug, "~> 1.5"},
+      {:mime, mime_version},
       {:ex_doc, "~> 0.21", only: :dev},
       {:credo, "~> 1.1", only: :dev},
       {:jason, "~> 1.0", only: [:dev, :test]}

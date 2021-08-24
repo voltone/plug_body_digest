@@ -38,6 +38,28 @@ defmodule PlugBodyDigestTest do
       refute conn.halted
       assert %{body_params: %{"test" => 123}} = conn
     end
+
+    test "with multipart body, no Digest header, optional" do
+      multipart = """
+      ------9H7VjX76etDQKRuR\r
+      Content-Disposition: form-data; name=\"test\"\r
+      \r
+      123\r
+      ------9H7VjX76etDQKRuR\r
+      Content-Disposition: form-data; name=\"file\"; filename=\"foo.txt\"\r
+      Content-Type: text/plain\r
+      \r
+      hello
+      \r
+      ------9H7VjX76etDQKRuR--\r
+      """
+
+      conn =
+        conn(:post, multipart, "multipart/mixed; boundary=----9H7VjX76etDQKRuR")
+        |> call(on_failure: {PlugBodyDigest, :optional, []})
+
+      refute conn.halted
+    end
   end
 
   describe "failure" do
@@ -107,8 +129,36 @@ defmodule PlugBodyDigestTest do
       scenario = fn ->
         conn =
           conn(:post, multipart, "multipart/mixed; boundary=----9H7VjX76etDQKRuR")
-          |> with_digest(multipart)
           |> call()
+
+        assert conn.halted
+        assert conn.status == 500
+        assert [] = get_resp_header(conn, "want-digest")
+      end
+
+      assert capture_log(scenario) =~ "multipart content types are not supported"
+    end
+
+    test "with multipart body and Digest header, optional" do
+      multipart = """
+      ------9H7VjX76etDQKRuR\r
+      Content-Disposition: form-data; name=\"test\"\r
+      \r
+      123\r
+      ------9H7VjX76etDQKRuR\r
+      Content-Disposition: form-data; name=\"file\"; filename=\"foo.txt\"\r
+      Content-Type: text/plain\r
+      \r
+      hello
+      \r
+      ------9H7VjX76etDQKRuR--\r
+      """
+
+      scenario = fn ->
+        conn =
+          conn(:post, multipart, "multipart/mixed; boundary=----9H7VjX76etDQKRuR")
+          |> with_digest(multipart)
+          |> call(on_failure: {PlugBodyDigest, :optional, []})
 
         assert conn.halted
         assert conn.status == 500

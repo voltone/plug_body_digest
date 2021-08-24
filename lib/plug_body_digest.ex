@@ -233,6 +233,14 @@ defmodule PlugBodyDigest do
   """
   @spec optional(Plug.Conn.t(), error_reason(), String.t()) :: Plug.Conn.t()
   def optional(conn, :no_digest_header, _want_digest), do: conn
+
+  def optional(conn, reason, want_digest) when reason in [:body_not_read, :multipart] do
+    case get_digest_header(conn) do
+      {:ok, :no_digest_header} -> conn
+      _otherwise -> failure(conn, reason, want_digest)
+    end
+  end
+
   def optional(conn, reason, want_digest), do: failure(conn, reason, want_digest)
 
   @doc """
