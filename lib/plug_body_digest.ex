@@ -94,7 +94,17 @@ defmodule PlugBodyDigest do
 
   @impl true
   @spec init(Keyword.t()) :: Keyword.t()
-  def init(opts), do: opts
+  def init(opts) do
+    algorithms = Keyword.get(opts, :algorithms, @algorithms)
+
+    case algorithms -- :crypto.supports(:hashs) do
+      [] ->
+        opts
+
+      invalid ->
+        raise "Invalid digest algorithm(s): #{Enum.join(invalid, ", ")}"
+    end
+  end
 
   @impl true
   @spec call(Plug.Conn.t(), Keyword.t()) :: Plug.Conn.t()
@@ -157,9 +167,7 @@ defmodule PlugBodyDigest do
   end
 
   defp want_digest(algorithms) do
-    algorithms
-    |> Enum.map(&Crypto.algorithm_name/1)
-    |> Enum.join(",")
+    Enum.map_join(algorithms, ",", &Crypto.algorithm_name/1)
   end
 
   defp on_success(nil, conn), do: conn

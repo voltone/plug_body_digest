@@ -7,7 +7,7 @@ defmodule PlugBodyDigest.MixProject do
     [
       app: :plug_body_digest,
       version: @version,
-      elixir: "~> 1.6",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
