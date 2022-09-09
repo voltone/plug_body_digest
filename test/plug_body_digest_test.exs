@@ -8,7 +8,7 @@ defmodule PlugBodyDigestTest do
   describe "configuration" do
     test "unsupported algorithm" do
       assert_raise RuntimeError, fn ->
-        PlugBodyDigest.init([algorithms: [:nosuchthing]])
+        PlugBodyDigest.init(algorithms: [:nosuchthing])
       end
     end
   end
