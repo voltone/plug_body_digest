@@ -5,6 +5,14 @@ defmodule PlugBodyDigestTest do
   import Plug.Conn
   import ExUnit.CaptureLog
 
+  describe "configuration" do
+    test "unsupported algorithm" do
+      assert_raise RuntimeError, fn ->
+        PlugBodyDigest.init([algorithms: [:nosuchthing]])
+      end
+    end
+  end
+
   describe "success" do
     test "with empty body" do
       conn =
@@ -159,29 +167,6 @@ defmodule PlugBodyDigestTest do
 
       assert capture_log(scenario) =~ "algorithm_mismatch"
     end
-
-    test "unsupported algorithm" do
-      body = "test=123"
-
-      scenario = fn ->
-        conn =
-          conn(:post, body)
-          |> with_digest(%{"nosuchthing" => Base.encode64("nosuchthing")})
-          |> call(
-            algorithms: [:nosuchthing],
-            parsers_opts: [
-              body_reader: {PlugBodyDigest, :digest_body_reader, [[algorithms: [:nosuchthing]]]}
-            ]
-          )
-
-        assert conn.halted
-        assert conn.status == 500
-        assert [] = get_resp_header(conn, "want-digest")
-      end
-
-      assert capture_log(scenario) =~ "Invalid algorithm configuration"
-      assert capture_log(scenario) =~ "nosuchthing"
-    end
   end
 
   describe "callbacks" do
@@ -232,13 +217,12 @@ defmodule PlugBodyDigestTest do
         conn(:post, "test=123")
         |> with_digest(%{"nosuchthing" => Base.encode64("nosuchthing")})
         |> call(
-          algorithms: [:nosuchthing],
           parsers_opts: [
-            body_reader: {PlugBodyDigest, :digest_body_reader, [[algorithms: [:nosuchthing]]]}
+            body_reader: {PlugBodyDigest, :digest_body_reader, []}
           ]
         )
 
-      assert PlugBodyDigest.get_digest(conn) == {:error, :bad_algorithm}
+      assert PlugBodyDigest.get_digest(conn) == {:error, :algorithm_mismatch}
     end
 
     test "missing header" do
