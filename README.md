@@ -1,5 +1,12 @@
 # PlugBodyDigest
 
+[![Github.com](https://github.com/voltone/plug_body_digest/workflows/CI/badge.svg)](https://github.com/voltone/plug_body_digest/actions)
+[![Hex.pm](https://img.shields.io/hexpm/v/plug_body_digest.svg)](https://hex.pm/packages/plug_body_digest)
+[![Hexdocs.pm](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/plug_body_digest/)
+[![Hex.pm](https://img.shields.io/hexpm/dt/plug_body_digest.svg)](https://hex.pm/packages/plug_body_digest)
+[![Hex.pm](https://img.shields.io/hexpm/l/plug_body_digest.svg)](https://hex.pm/packages/plug_body_digest)
+[![Github.com](https://img.shields.io/github/last-commit/voltone/plug_body_digest.svg)](https://github.com/voltone/plug_body_digest/commits/master)
+
 Plug to verify the request body against the digest value sent in the HTTP
 'Digest' header, as defined in [RFC3230, section 4.3.2](https://tools.ietf.org/html/rfc3230#section-4.3.2).
 Typically used in combination with an HTTP request signature covering the
