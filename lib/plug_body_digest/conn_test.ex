@@ -26,11 +26,7 @@ defmodule PlugBodyDigest.ConnTest do
   def with_digest(conn, body_or_digests)
 
   def with_digest(conn, digests) when is_map(digests) do
-    digest_header =
-      digests
-      |> Enum.map(fn {alg, value} -> "#{alg}=#{value}" end)
-      |> Enum.join(",")
-
+    digest_header = Enum.map_join(digests, ",", fn {alg, value} -> "#{alg}=#{value}" end)
     put_req_header(conn, "digest", digest_header)
   end
 
